@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Real-time Chat with Online Users</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            background-color: #f4f4f4;
+        }
+        #chat-box {
+            width: 100%;
+            height: 300px;
+            border: 1px solid #ccc;
+            background: #fff;
+            padding: 10px;
+            overflow-y: auto;
+            margin-bottom: 10px;
+        }
+        #message-input {
+            width: 80%;
+            padding: 10px;
+            margin-right: 10px;
+        }
+        #send-button {
+            padding: 10px;
+        }
+        #online-users {
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Real-time Chat with Online Users</h1>
+
+    <div>
+        <input type="text" id="username-input" placeholder="Enter your username" />
+        <button id="set-username">Set Username</button>
+    </div>
+
+    <div id="room-container" style="display:none;">
+        <input type="text" id="room-input" placeholder="Enter room name" />
+        <button id="join-room">Join Room</button>
+    </div>
+
+    <div id="chat-container" style="display:none;">
+        <div id="chat-box"></div>
+        <input type="text" id="message-input" placeholder="Type your message..." />
+        <button id="send-button">Send</button>
+    </div>
+
+    <div id="online-users">
+        <h3>Online Users:</h3>
+        <ul id="user-list"></ul>
+    </div>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+        const socket = io();
+
+        const usernameInput = document.getElementById('username-input');
+        const setUsernameButton = document.getElementById('set-username');
+        const roomContainer = document.getElementById('room-container');
+        const roomInput = document.getElementById('room-input');
+        const joinRoomButton = document.getElementById('join-room');
+        const chatContainer = document.getElementById('chat-container');
+        const chatBox = document.getElementById('chat-box');
+        const messageInput = document.getElementById('message-input');
+        const sendButton = document.getElementById('send-button');
+        const userList = document.getElementById('user-list');
+
+        let currentRoom = '';
+        let username = '';
+
+        // Set the username and notify the server
+        setUsernameButton.addEventListener('click', () => {
+            username = usernameInput.value.trim();
+            if (username) {
+                socket.emit('userConnected', username);
+                roomContainer.style.display = 'block';
+                usernameInput.disabled = true;
+                setUsernameButton.disabled = true;
+            }
+        });
+
+        // Join a room
+        joinRoomButton.addEventListener('click', () => {
+            const room = roomInput.value.trim();
+            if (room) {
+                currentRoom = room;
+                socket.emit('joinRoom', room);
+                chatContainer.style.display = 'block';
+                roomInput.disabled = true;
+                joinRoomButton.disabled = true;
+            }
+        });
+
+        // Send a message
+        sendButton.addEventListener('click', () => {
+            const message = messageInput.value.trim();
+            if (message && currentRoom) {
+                socket.emit('sendMessage', { room: currentRoom, message, username });
+                appendMessage(`You: ${message}`, 'self');
+                messageInput.value = '';
+            }
+        });
+
+        // Receive a message
+        socket.on('receiveMessage', ({ message, username }) => {
+            appendMessage(`${username}: ${message}`, 'other');
+        });
+
+        // Update online users list
+        socket.on('updateOnlineUsers', (users) => {
+            userList.innerHTML = '';
+            for (const id in users) {
+                const li = document.createElement('li');
+                li.textContent = `${users[id]} (ID: ${id})`;
+                userList.appendChild(li);
+            }
+        });
+
+        // Append a message to the chat box
+        function appendMessage(message, type) {
+            const messageElement = document.createElement('div');
+            messageElement.textContent = message;
+            messageElement.style.textAlign = type === 'self' ? 'right' : 'left';
+            chatBox.appendChild(messageElement);
+            chatBox.scrollTop = chatBox.scrollHeight; // Auto-scroll to the bottom
+        }
+    </script>
+</body>
+</html>
