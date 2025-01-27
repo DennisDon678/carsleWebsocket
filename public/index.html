@@ -1,135 +1,173 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Real-time Chat with Online Users</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            padding: 20px;
-            background-color: #f4f4f4;
-        }
-        #chat-box {
-            width: 100%;
-            height: 300px;
-            border: 1px solid #ccc;
-            background: #fff;
-            padding: 10px;
-            overflow-y: auto;
-            margin-bottom: 10px;
-        }
-        #message-input {
-            width: 80%;
-            padding: 10px;
-            margin-right: 10px;
-        }
-        #send-button {
-            padding: 10px;
-        }
-        #online-users {
-            margin-top: 20px;
-        }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Socket.IO Call Test</title>
+  <script src="https://cdn.socket.io/4.5.1/socket.io.min.js"></script>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 20px;
+    }
+    #messages, #onlineUsers {
+      border: 1px solid #ddd;
+      padding: 10px;
+      height: 200px;
+      overflow-y: scroll;
+      margin-bottom: 10px;
+    }
+  </style>
 </head>
 <body>
-    <h1>Real-time Chat with Online Users</h1>
+  <h1>Socket.IO Call Test</h1>
+  
+  <!-- User Connection -->
+  <div>
+    <label>Username: <input type="text" id="username" /></label>
+    <button id="connectBtn">Connect</button>
+  </div>
 
-    <div>
-        <input type="text" id="username-input" placeholder="Enter your username" />
-        <button id="set-username">Set Username</button>
-    </div>
+  <!-- Online Users -->
+  <div>
+    <h3>Online Users</h3>
+    <div id="onlineUsers"></div>
+  </div>
 
-    <div id="room-container" style="display:none;">
-        <input type="text" id="room-input" placeholder="Enter room name" />
-        <button id="join-room">Join Room</button>
-    </div>
+  <!-- Room Joining -->
+  <div>
+    <h3>Join Room</h3>
+    <input type="text" id="room" placeholder="Room name" />
+    <button id="joinRoomBtn">Join</button>
+  </div>
 
-    <div id="chat-container" style="display:none;">
-        <div id="chat-box"></div>
-        <input type="text" id="message-input" placeholder="Type your message..." />
-        <button id="send-button">Send</button>
-    </div>
+  <!-- Call Testing -->
+  <div>
+    <h3>Call Notification</h3>
+    <label>Caller Name: <input type="text" id="callerName" /></label><br />
+    <label>Caller Profile Image URL: <input type="text" id="callerProfileImage" /></label><br />
+    <label>Receiver Name: <input type="text" id="receiverName" /></label><br />
+    <label>Receiver ID: <input type="text" id="receiverId" /></label><br />
+    <label>Call Duration (seconds): <input type="number" id="callDuration" /></label><br />
+    <button id="startCallBtn">Start Call</button>
+  </div>
 
-    <div id="online-users">
-        <h3>Online Users:</h3>
-        <ul id="user-list"></ul>
-    </div>
+  <!-- Messages -->
+  <div>
+    <h3>Messages</h3>
+    <div id="messages"></div>
+    <input type="text" id="messageInput" placeholder="Type your message" />
+    <button id="sendMessageBtn">Send</button>
+  </div>
 
-    <script src="/socket.io/socket.io.js"></script>
-    <script>
-        const socket = io();
+  <script>
+    const socket = io('http://localhost:3000');
 
-        const usernameInput = document.getElementById('username-input');
-        const setUsernameButton = document.getElementById('set-username');
-        const roomContainer = document.getElementById('room-container');
-        const roomInput = document.getElementById('room-input');
-        const joinRoomButton = document.getElementById('join-room');
-        const chatContainer = document.getElementById('chat-container');
-        const chatBox = document.getElementById('chat-box');
-        const messageInput = document.getElementById('message-input');
-        const sendButton = document.getElementById('send-button');
-        const userList = document.getElementById('user-list');
+    const usernameInput = document.getElementById('username');
+    const connectBtn = document.getElementById('connectBtn');
+    const onlineUsersDiv = document.getElementById('onlineUsers');
+    const roomInput = document.getElementById('room');
+    const joinRoomBtn = document.getElementById('joinRoomBtn');
+    const callerNameInput = document.getElementById('callerName');
+    const callerProfileImageInput = document.getElementById('callerProfileImage');
+    const receiverNameInput = document.getElementById('receiverName');
+    const receiverIdInput = document.getElementById('receiverId');
+    const callDurationInput = document.getElementById('callDuration');
+    const startCallBtn = document.getElementById('startCallBtn');
+    const messagesDiv = document.getElementById('messages');
+    const messageInput = document.getElementById('messageInput');
+    const sendMessageBtn = document.getElementById('sendMessageBtn');
 
-        let currentRoom = '';
-        let username = '';
+    let userId = '';
+    let username = '';
+    let room = '';
 
-        // Set the username and notify the server
-        setUsernameButton.addEventListener('click', () => {
-            username = usernameInput.value.trim();
-            if (username) {
-                socket.emit('userConnected', username);
-                roomContainer.style.display = 'block';
-                usernameInput.disabled = true;
-                setUsernameButton.disabled = true;
-            }
+    // Connect user
+    connectBtn.addEventListener('click', () => {
+      userId = `user-${Math.random().toString(36).substr(2, 9)}`;
+      username = usernameInput.value;
+
+      if (username) {
+        socket.emit('userConnected', { userId, username });
+        alert(`Connected as ${username} with ID: ${userId}`);
+      }
+    });
+
+    // Join room
+    joinRoomBtn.addEventListener('click', () => {
+      room = roomInput.value;
+      if (room) {
+        socket.emit('joinRoom', room);
+        alert(`Joined room: ${room}`);
+      }
+    });
+
+    // Start a call
+    startCallBtn.addEventListener('click', () => {
+      const callerName = callerNameInput.value || username;
+      const callerProfileImage = callerProfileImageInput.value;
+      const receiverName = receiverNameInput.value;
+      const receiverId = receiverIdInput.value;
+      const duration = parseInt(callDurationInput.value, 10);
+
+      if (callerName && receiverName && receiverId && duration) {
+        socket.emit('startCall', {
+          room,
+          callerId: userId,
+          callerName,
+          callerProfileImage,
+          receiverName,
+          receiverId,
+          duration,
         });
+        alert('Call initiated!');
+      } else {
+        alert('Please fill in all call details.');
+      }
+    });
 
-        // Join a room
-        joinRoomButton.addEventListener('click', () => {
-            const room = roomInput.value.trim();
-            if (room) {
-                currentRoom = room;
-                socket.emit('joinRoom', room);
-                chatContainer.style.display = 'block';
-                roomInput.disabled = true;
-                joinRoomButton.disabled = true;
-            }
-        });
+    // Send message
+    sendMessageBtn.addEventListener('click', () => {
+      const message = messageInput.value;
+      if (room && message) {
+        socket.emit('sendMessage', { room, message, username });
+        addMessage(`You: ${message}`);
+        messageInput.value = '';
+      }
+    });
 
-        // Send a message
-        sendButton.addEventListener('click', () => {
-            const message = messageInput.value.trim();
-            if (message && currentRoom) {
-                socket.emit('sendMessage', { room: currentRoom, message, username });
-                appendMessage(`You: ${message}`, 'self');
-                messageInput.value = '';
-            }
-        });
+    // Update online users
+    socket.on('updateOnlineUsers', (onlineUsers) => {
+      onlineUsersDiv.innerHTML = '';
+      for (const [id, user] of Object.entries(onlineUsers)) {
+        const userDiv = document.createElement('div');
+        userDiv.textContent = `Username: ${user.username}, UserID: ${id}, SocketID: ${user.socketId}`;
+        onlineUsersDiv.appendChild(userDiv);
+      }
+    });
 
-        // Receive a message
-        socket.on('receiveMessage', ({ message, username }) => {
-            appendMessage(`${username}: ${message}`, 'other');
-        });
+    // Receive call notification
+    socket.on('callNotification', ({ room, callerName, callerProfileImage, duration }) => {
+      alert(`Incoming call from ${callerName} for ${duration} seconds.\nProfile Image: ${callerProfileImage}`);
+    });
 
-        // Update online users list
-        socket.on('updateOnlineUsers', (users) => {
-            userList.innerHTML = '';
-            for (const id in users) {
-                const li = document.createElement('li');
-                li.textContent = `${users[id]} (ID: ${id})`;
-                userList.appendChild(li);
-            }
-        });
+    // Call ended
+    socket.on('callEnded', ({ room, callerId, receiverId }) => {
+      alert(`Call in room ${room} has ended.\nCaller ID: ${callerId}, Receiver ID: ${receiverId}`);
+    });
 
-        // Append a message to the chat box
-        function appendMessage(message, type) {
-            const messageElement = document.createElement('div');
-            messageElement.textContent = message;
-            messageElement.style.textAlign = type === 'self' ? 'right' : 'left';
-            chatBox.appendChild(messageElement);
-            chatBox.scrollTop = chatBox.scrollHeight; // Auto-scroll to the bottom
-        }
-    </script>
+    // Notify when receiver is offline
+    socket.on('receiverOffline', ({ receiverName }) => {
+      alert(`The receiver ${receiverName} is currently offline.`);
+    });
+
+    // Add message to message box
+    function addMessage(message) {
+      const messageDiv = document.createElement('div');
+      messageDiv.textContent = message;
+      messagesDiv.appendChild(messageDiv);
+      messagesDiv.scrollTop = messagesDiv.scrollHeight;
+    }
+  </script>
 </body>
 </html>
