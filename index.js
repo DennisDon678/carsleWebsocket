@@ -39,11 +39,11 @@ io.on('connection', (socket) => {
         io.emit('updateOnlineUsers', onlineUsers);
     });
 
-    // Join a specific chat room
-    socket.on('joinRoom', (room) => {
-        socket.join(room);
-        console.log(`User ${socket.id} joined room: ${room}`);
-    });
+    // // Join a specific chat room
+    // socket.on('joinRoom', (room) => {
+    //     socket.join(room);
+    //     console.log(`User ${socket.id} joined room: ${room}`);
+    // });
 
     // Handle chat messages
     socket.on('sendMessage', ({ room, message, username }) => {

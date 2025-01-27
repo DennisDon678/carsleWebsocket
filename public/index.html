@@ -161,6 +161,10 @@
       alert(`The receiver ${receiverName} is currently offline.`);
     });
 
+    socket.on('receiveMessage', ({ message, username }) => {
+        console.log(`Message from ${username}: ${message}`);
+    });
+
     // Add message to message box
     function addMessage(message) {
       const messageDiv = document.createElement('div');
