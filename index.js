@@ -149,6 +149,22 @@ io.on('connection', (socket) => {
         }
     });
 
+    // handle reject call
+    socket.on('rejectCall', ({ room, callerId, receiverId }) => {
+        console.log(`Call rejected by ${callerId} in room ${room}`);
+        // Notify participants that the call has ended
+        io.to(room).emit('rejectCall', { room, callerId, receiverId });
+        delete activeCalls[room]; // Remove the call from active calls
+    });
+
+    // handle not answered
+    socket.on('notAnswered', ({ room, callerId, receiverId }) => {
+        console.log(`Call not answered by ${callerId} in room ${room}`);
+        // Notify participants that the call has ended
+        io.to(room).emit('notAnswered', { room, callerId, receiverId });
+        delete activeCalls[room]; // Remove the call from active calls
+    });
+
     // // Handle user disconnection and clean up active calls
     // socket.on('disconnect', () => {
     //     console.log(`User disconnected: ${socket.id}`);
