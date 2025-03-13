@@ -1,6 +1,7 @@
 const express = require('express');
 const { RtcTokenBuilder, RtcRole } = require('agora-access-token');
 require('dotenv').config();
+const { Server } = require('socket.io');
 
 const port = 8080;
 const APP_ID = process.env.APP_ID;
@@ -19,6 +20,13 @@ const nocache = (req, res, next) => {
     res.header('Pragma', 'no-cache');
     next();
 };
+
+// Socket IO logic
+
+
+
+
+// Generate an Agora RTC Token with no expiration time
 
 const generateAccessToken = (req, res) => {
     res.header('Access-Control-Allow-Origin', '*');
