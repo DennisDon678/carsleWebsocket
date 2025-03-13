@@ -13,6 +13,12 @@ if (!APP_ID || !APP_CERTIFICATE) {
 }
 
 const app = express();
+const server = http.createServer(app);
+const io = new Server(server, {
+    cors: {
+        origin: '*', // Allow all origins (adjust for production security)
+    }
+});
 
 const nocache = (req, res, next) => {
     res.header('Cache-Control', 'private, no-cache, no-store, must-revalidate');
@@ -23,7 +29,48 @@ const nocache = (req, res, next) => {
 
 // Socket IO logic
 
+// Track online users: { socketId: { uid, username } }
+let onlineUsers = {};
 
+// Socket IO event handlers
+io.on('connection', (socket) => {
+    console.log('A user connected:', socket.id);
+
+    socket.on('join', (data) => {
+        console.log('User joined:', data);
+        onlineUsers[socket.id] = data;
+        io.emit('onlineUsers', onlineUsers);
+    });
+
+    socket.on('initiateCall', (data) => {
+        console.log('Initiating call to:', data);
+        const {targetUid, channelName, callerUsername, token} = data;
+    });
+
+    // Find the target user by UID
+    const targetSocketId = Object.keys(onlineUsers).find(
+        socketId => onlineUsers[socketId].uid === targetUid
+    );
+
+    if (targetSocketId) {
+        // User is online, notify them
+        io.to(targetSocketId).emit('incoming-call', {
+            callerUsername,
+            channelName,
+            token
+        });
+        socket.emit('call-status', { success: true, message: `Notified user ${targetUid}` });
+    } else {
+        // User is offline
+        socket.emit('call-status', { success: false, message: `User ${targetUid} is offline` });
+    }
+
+    socket.on('disconnect', () => {
+        console.log('A user disconnected:', socket.id);
+        delete onlineUsers[socket.id];
+        io.emit('onlineUsers', onlineUsers);
+    });
+});
 
 
 // Generate an Agora RTC Token with no expiration time
