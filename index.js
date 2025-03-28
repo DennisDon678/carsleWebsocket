@@ -222,7 +222,7 @@ app.post('/api/call-duration', async(req, res) => {
 
 // Reset call duration for a specific channel
 app.post('/api/reset-call-duration', (req, res) => {
-    const { channelName } = req.body;
+    const { channelName } = req.body.channelName;
     
     
     if (!channelName) {
