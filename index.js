@@ -127,14 +127,6 @@ io.on('connection', (socket) => {
 
     socket.on('end-call', ({ targetId , targetSocketId}) => {
         console.log(`Ending call for user: ${targetId}`);
-        
-        if (callDurations[channelName]) {
-            callDurations[channelName].endTime = Date.now();
-            callDurations[channelName].duration = Math.round(
-                (callDurations[channelName].endTime - callDurations[channelName].startTime) / 1000
-            );
-        }
-        
 
         // Find the target socket ID
         if (targetId) {
@@ -202,7 +194,7 @@ app.get('/api/access_token', nocache, generateAccessToken);
 
 // Get call duration for a specific channel
 app.post('/api/call-duration', async(req, res) => {
-    const { channelName } = req.body;
+    const { channelName } = req.body.channelName;
     console.log('Getting call duration for channel:', channelName);
 
     // Calculate and store call duration
@@ -227,7 +219,7 @@ app.post('/api/call-duration', async(req, res) => {
 
 // Reset call duration for a specific channel
 app.post('/api/reset-call-duration', (req, res) => {
-    const { channelName } = req.body;
+    const { channelName } = req.body.channelName;
     
     
     if (!channelName) {
