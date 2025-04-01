@@ -202,7 +202,7 @@ app.get('/api/access_token', nocache, generateAccessToken);
 
 // Get call duration for a specific channel
 app.post('/api/call-duration', async(req, res) => {
-    const { channelName } = req.body.channelName;
+    const { channelName } = req.body;
     console.log('Getting call duration for channel:', channelName);
 
     // Calculate and store call duration
@@ -227,7 +227,7 @@ app.post('/api/call-duration', async(req, res) => {
 
 // Reset call duration for a specific channel
 app.post('/api/reset-call-duration', (req, res) => {
-    const { channelName } = req.body.channelName;
+    const { channelName } = req.body;
     
     
     if (!channelName) {
