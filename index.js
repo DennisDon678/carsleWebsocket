@@ -128,7 +128,12 @@ io.on('connection', (socket) => {
     socket.on('end-call', ({ targetId , targetSocketId}) => {
         console.log(`Ending call for user: ${targetId}`);
         
-          
+        if (callDurations[channelName]) {
+            callDurations[channelName].endTime = Date.now();
+            callDurations[channelName].duration = Math.round(
+                (callDurations[channelName].endTime - callDurations[channelName].startTime) / 1000
+            );
+        }
         
 
         // Find the target socket ID
@@ -201,11 +206,11 @@ app.post('/api/call-duration', async(req, res) => {
     console.log('Getting call duration for channel:', channelName);
 
     // Calculate and store call duration
-    if (callDurations[channelName]) {
-        callDurations[channelName].endTime = Date.now();
-        callDurations[channelName].duration = 
-            Math.round((callDurations[channelName].endTime - callDurations[channelName].startTime) / 1000); // duration in seconds
-    }
+    // if (callDurations[channelName]) {
+    //     callDurations[channelName].endTime = Date.now();
+    //     callDurations[channelName].duration = 
+    //         Math.round((callDurations[channelName].endTime - callDurations[channelName].startTime) / 1000); // duration in seconds
+    // }
     
     if (!channelName) {
         return res.status(400).json({ error: 'Channel name is required' });
