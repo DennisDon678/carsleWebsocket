@@ -5,7 +5,7 @@ require('dotenv').config();
 const cors = require('cors');
 const { Server } = require('socket.io');
 
-const port = 8080;
+const port = process.env.PORT || 8080;
 const APP_ID = process.env.APP_ID;
 const APP_CERTIFICATE = process.env.APP_CERTIFICATE;
 
@@ -21,18 +21,18 @@ const corsOptions = {
     allowedHeaders: ['Content-Type', 'Authorization'],
     credentials: true,
     optionsSuccessStatus: 200
-  };
+};
 
-  
-  const app = express();
-  const server = http.createServer(app);
-  const io = new Server(server, {
-      cors: {
-          origin: '*', // Adjust this in production for security
-        }
-    });
 
-    // Apply CORS middleware
+const app = express();
+const server = http.createServer(app);
+const io = new Server(server, {
+    cors: {
+        origin: '*', // Adjust this in production for security
+    }
+});
+
+// Apply CORS middleware
 app.use(cors(corsOptions));
 app.use(express.json());  // Add this before your routes
 
@@ -76,15 +76,15 @@ io.on('connection', (socket) => {
                 token,
                 callerSocketId: socket.id // Send caller's socket ID for response
             });
-            socket.emit('call-status', { 
-                success: true, 
+            socket.emit('call-status', {
+                success: true,
                 message: `Calling user ${targetUid}`,
                 targetUid
             });
         } else {
             // User is offline
-            socket.emit('call-status', { 
-                success: false, 
+            socket.emit('call-status', {
+                success: false,
                 message: `User ${targetUid} is offline`,
                 targetUid
             });
@@ -125,17 +125,17 @@ io.on('connection', (socket) => {
         });
     });
 
-    socket.on('end-call', ({ targetId , targetSocketId}) => {
+    socket.on('end-call', ({ targetId, targetSocketId }) => {
         console.log(`Ending call for user: ${targetId}`);
 
         // Find the target socket ID
         if (targetId) {
-            
+
             targetSocketId = Object.keys(onlineUsers).find(
                 socketId => onlineUsers[socketId].uid === targetId
             );
         }
-    
+
         if (targetSocketId) {
             io.to(targetSocketId).emit('end-call');
             console.log(`Call ended for user: ${targetId}`);
@@ -149,7 +149,7 @@ io.on('connection', (socket) => {
         io.emit('onlineUsers', onlineUsers);
     });
 
-    
+
 });
 
 // Generate an Agora RTC Token
@@ -193,23 +193,23 @@ const generateAccessToken = (req, res) => {
 app.get('/api/access_token', nocache, generateAccessToken);
 
 // Get call duration for a specific channel
-app.post('/api/call-duration', async(req, res) => {
+app.post('/api/call-duration', async (req, res) => {
     const { channelName } = req.body.channelName;
     console.log('Getting call duration for channel:', channelName);
 
     // Calculate and store call duration
     if (callDurations[channelName]) {
         callDurations[channelName].endTime = Date.now();
-        callDurations[channelName].duration = 
+        callDurations[channelName].duration =
             Math.round((callDurations[channelName].endTime - callDurations[channelName].startTime) / 1000); // duration in seconds
     }
-    
+
     if (!channelName) {
         return res.status(400).json({ error: 'Channel name is required' });
     }
 
     const callDuration = callDurations[channelName];
-    
+
     if (!callDuration) {
         return res.status(404).json({ error: 'No call duration found for this channel' });
     }
@@ -220,8 +220,8 @@ app.post('/api/call-duration', async(req, res) => {
 // Reset call duration for a specific channel
 app.post('/api/reset-call-duration', (req, res) => {
     const { channelName } = req.body.channelName;
-    
-    
+
+
     if (!channelName) {
         return res.status(400).json({ error: 'Channel name is required' });
     }
@@ -230,6 +230,30 @@ app.post('/api/reset-call-duration', (req, res) => {
     res.json({ message: 'Call duration reset successfully' });
 });
 
+/** 
+ * This endpoint is used to receive a post request from the PHP server to send a socket notification to a specific user.
+ * 
+ * Client should listen to notification events as "notification-<userId>"
+ * @param  string <userid> - this the dynamic user ID for the logged in User.
+ */
+app.post('/socket-notification/emit', (req, res) => {
+    const { event, data } = req.body;
+
+    // validate event 
+    if (!event) {
+        return res.status(400).json({ error: 'Event is required' });
+    }
+
+    // validate data
+    if (!data) {
+        return res.status(400).json({ error: 'Data is required' });
+    }
+
+    io.emit(event, data);
+
+    // give success response
+    res.json({ message: 'Socket notification sent successfully' });
+})
 
 server.listen(port, () => {  // Changed from app.listen to server.listen
     console.log(`Agora Token Server listening at http://localhost:${port}`);
