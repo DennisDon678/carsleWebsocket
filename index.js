@@ -235,6 +235,14 @@ app.post('/api/reset-call-duration', (req, res) => {
  * 
  * Client should listen to notification events as "notification-<userId>"
  * @param  string <userid> - this the dynamic user ID for the logged in User.
+ * 
+ * @data is the notification array usually in this format:
+ * {
+ *    "title": "Notification Title",
+ *    "notice": "Notification Message",
+ * }
+ * 
+ * SUGGESTION: when a new notification is received, increment the notification count displayed on the UI. and append the new notification to the list of notifications.
  */
 app.post('/socket-notification/emit', (req, res) => {
     const { event, data } = req.body;
